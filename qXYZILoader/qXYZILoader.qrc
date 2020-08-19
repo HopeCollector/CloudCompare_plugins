@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/CC/plugin/XYZILoaderIOPlugin" >
+    <file>info.json</file>
+  </qresource>
+</RCC>
