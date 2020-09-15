@@ -30,7 +30,7 @@ class qVolumeMeasureDlg : public QDialog, public Ui::VolumeMeasureDlg
 public:
 	explicit qVolumeMeasureDlg(ccMainAppInterface* app = nullptr);
 	~qVolumeMeasureDlg();
-	void setCloud(ccPointCloud* cloud);
+	bool setCloud(ccPointCloud* cloud);
 
 private:
 
@@ -49,15 +49,65 @@ private:
 		qreal density;
 	} report;
 
+	struct CloudBackup
+	{
+		ccPointCloud* ref;
+		RGBAColorsTableType* colors;
+		bool hadColors;
+		int displayedSFIndex;
+		ccGenericGLDisplay* originDisplay;
+		bool colorsWereDisplayed;
+		bool sfWasDisplayed;
+		bool wasVisible;
+		bool wasEnabled;
+		bool wasSelected;
+		bool hadOctree;
+		bool ownCloud;
+
+		//! Default constructor
+		CloudBackup()
+			: ref(0)
+			, colors(0)
+			, hadColors(false)
+			, displayedSFIndex(-1)
+			, originDisplay(0)
+			, colorsWereDisplayed(false)
+			, sfWasDisplayed(false)
+			, wasVisible(false)
+			, wasEnabled(false)
+			, wasSelected(false)
+			, hadOctree(false)
+			, ownCloud(false)
+		{}
+
+		//! Destructor
+		~CloudBackup() { restore(); clear(); }
+
+		//! Backups the given cloud
+		void backup(ccPointCloud* cloud);
+
+		//! Backups the colors (not done by default)
+		bool backupColors();
+
+		//! Restores the cloud
+		void restore();
+
+		//! Clears the structure
+		void clear();
+	};
+
 private:
-	ccPointCloud* m_cloud;
-	ccMesh* m_rasterMesh;
 	ccMainAppInterface* m_app;
+
 	ccGLWindow* m_glWindow;
-	ccGLWindow* m_preGlWindow;
-	cc2DLabel m_label;
+	ccMesh* m_rasterMesh;
+	std::unique_ptr<QAxWidget> m_word;
 	std::vector<unsigned> m_pointsIdx;
+	CloudBackup m_cloud;
+	cc2DLabel m_label;
+
 	QDir currentPath;
+
 	qreal gridStep;
 	quint32 gridWidth, gridHeight;
 

@@ -1,0 +1,23 @@
+{
+	"type" : "Standard",
+	"name" : "UDP Transfer (Standard Plugin)",
+	"icon" : ":/CC/plugin/qUDPTransfer/images/icon.png",
+	"description": "Enable cc to get point cloud through udp.",
+	"authors" : [
+		{
+			"name" : "HopeCollector",
+			"email" : "cmw4187@icloud.com"
+		}
+	],
+	"maintainers" : [
+		{
+			"name" : "HopeCollector",
+			"email" : "cmw4187@icloud.com"
+		}
+	],
+	"references" : [
+		{
+			"text" : "I use this plugin to remote control my scanner"
+		}
+	]
+}

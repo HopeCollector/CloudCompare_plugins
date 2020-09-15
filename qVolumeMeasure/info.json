@@ -1,0 +1,23 @@
+{
+	"type" : "Standard",
+	"name" : "Measure Volume (Standard Plugin)",
+	"icon" : ":/CC/plugin/qVolumeMeasure/images/icon.png",
+	"description": "体积测量",
+	"authors" : [
+		{
+			"name" : "HopeCollector",
+			"email" : "cmw4187@icloud.com"
+		}
+	],
+	"maintainers" : [
+		{
+			"name" : "HopeCollector",
+			"email" : "cmw4187@icloud.com"
+		}
+	],
+	"references" : [
+		{
+			"text" : "for people who donot know much about computer to measure the volume of a point cloud"
+		}
+	]
+}

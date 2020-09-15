@@ -78,16 +78,17 @@ void qVolumeMeasure::doAction()
 {
 	ccPointCloud * cloud = dynamic_cast<ccPointCloud*>(m_app->getSelectedEntities().front());
 
-	m_app->dispToConsole("measure volume v0.1");
-
 	qVolumeMeasureDlg dlg(m_app);
 
 	dlg.show();
 	QCoreApplication::processEvents();
-
 	m_app->setSelectedInDB(cloud, false);
-	dlg.setCloud(cloud);
-	dlg.exec();
+
+	if (dlg.setCloud(cloud)) {
+		m_app->freezeUI(true);
+		dlg.exec();
+		m_app->freezeUI(false);
+	}
 
 	m_app->refreshAll();
 }
