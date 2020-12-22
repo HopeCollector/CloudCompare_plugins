@@ -1,11 +1,10 @@
 #include "qVolumeMeasureDlg.h"
 
 qVolumeMeasureDlg::qVolumeMeasureDlg(ccMainAppInterface* app)
-	: QDialog(app ? app->getMainWindow() : nullptr, Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint)
+	: QDialog(app ? app->getMainWindow() : nullptr,  Qt::Dialog | Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint)
 	, m_app(app)
 	, m_glWindow(nullptr)
 	, m_rasterMesh(nullptr)
-	, m_word(nullptr)
 	, m_cloud()
 	, m_label(cc2DLabel("Ground"))
 	, m_pointsIdx(std::vector<unsigned>())
@@ -15,6 +14,7 @@ qVolumeMeasureDlg::qVolumeMeasureDlg(ccMainAppInterface* app)
 	, gridHeight(0)
 {
 	setupUi(this);
+	setModal(true);
 
 	{
 		QWidget* glWidget = nullptr;
@@ -36,6 +36,7 @@ qVolumeMeasureDlg::qVolumeMeasureDlg(ccMainAppInterface* app)
 		connect(okPushButton, &QPushButton::clicked, this, &qVolumeMeasureDlg::onOkPushButtonClick);
 		connect(calPushButton, &QPushButton::clicked, this, &qVolumeMeasureDlg::onCalPushButtonClick);
 		connect(genReportPushButton, &QPushButton::clicked, this, &qVolumeMeasureDlg::onGenReportPushButtonClick);
+		connect(switchPcMeshPushButton, &QPushButton::clicked, this, &qVolumeMeasureDlg::onSwitchPushButtonClick);
 		connect(densityLineEdit, &QLineEdit::textChanged, this, [&](const QString& s) {report.density = s.toDouble();});
 		connect(m_glWindow, &ccGLWindow::itemPicked, this, &qVolumeMeasureDlg::handlePickedItem);
 	}
@@ -45,6 +46,7 @@ qVolumeMeasureDlg::qVolumeMeasureDlg(ccMainAppInterface* app)
 		clearPushButton->setEnabled(false);
 		calPushButton->setEnabled(false);
 		genReportPushButton->setEnabled(false);
+		switchPcMeshPushButton->setEnabled(false);
 	}
 
 	{
@@ -62,9 +64,6 @@ qVolumeMeasureDlg::qVolumeMeasureDlg(ccMainAppInterface* app)
 
 qVolumeMeasureDlg::~qVolumeMeasureDlg()
 {
-	if(m_word.get())
-		m_word->dynamicCall("Quit()");
-
 	if (m_glWindow)
 	{
 		m_glWindow->getOwnDB()->removeAllChildren();
@@ -129,6 +128,7 @@ void qVolumeMeasureDlg::onClearPushButtonClick()
 	okPushButton->setEnabled(false);
 	calPushButton->setEnabled(false);
 	genReportPushButton->setEnabled(false);
+	switchPcMeshPushButton->setEnabled(false);
 
 	m_label.clear();
 	m_label.setVisible(true);
@@ -304,6 +304,7 @@ void qVolumeMeasureDlg::onCalPushButtonClick()
 	}
 
 	genReportPushButton->setEnabled(true);
+	switchPcMeshPushButton->setEnabled(true);
 	nProgress.oneStep();
 	return;
 }
@@ -328,13 +329,13 @@ void qVolumeMeasureDlg::onGenReportPushButtonClick()
 	{
 		QString defaultName = QString::fromLocal8Bit("测量报告")
 			+ QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss")
-			+ ".docx";
+			+ ".doc";
 
 		fileName = QFileDialog::getSaveFileName(
 			this,
 			QString::fromLocal8Bit("保存文件"),
 			currentPath.absoluteFilePath(defaultName),
-			"Docx (*.docx)"
+			"Doc (*.doc)"
 		);
 		
 		if (fileName.isEmpty()) return;
@@ -356,24 +357,20 @@ void qVolumeMeasureDlg::onGenReportPushButtonClick()
 	// create screen short
 	{
 		pDlg->setInfo(QString::fromLocal8Bit("生成点云截图 ..."));
-		auto view = m_glWindow->getViewportParameters();
-
-		m_glWindow->setView(CC_ISO_VIEW_1);
 		m_glWindow->renderToFile(img.fileName());
-
-		m_glWindow->setViewportParameters(view);
 		nProgress.oneStep();
 	}
 
 	// create doc file
 	{
 		pDlg->setInfo(QString::fromLocal8Bit("生成 Word 文档 ..."));
-		if (!m_word.get())
-			m_word = std::make_unique<QAxWidget>("Word.Application", this, Qt::MSWindowsOwnDC);
-		m_word->setProperty("Visible", false);
-		auto documents = m_word->querySubObject("Documents");
-		documents->dynamicCall("Add(QString)", currentPath.absoluteFilePath("template.dotx"));
-		auto document = m_word->querySubObject("ActiveDocument");
+		QScopedPointer<WordAppType> wordApp(new WordAppType("Word.Application", this, Qt::MSWindowsOwnDC));
+		/*if (!m_word.get())
+			m_word = std::make_unique<QAxWidget>("Word.Application", this, Qt::MSWindowsOwnDC);*/
+		wordApp->setProperty("Visible", false);
+		auto documents = wordApp->querySubObject("Documents");
+		documents->dynamicCall("Add(QString)", currentPath.absoluteFilePath("template.dot"));
+		auto document = wordApp->querySubObject("ActiveDocument");
 		nProgress.oneStep();
 
 		auto bookmarkTime = document->querySubObject("Bookmarks(QVariant)", "GenerateTime");
@@ -451,6 +448,23 @@ void qVolumeMeasureDlg::onOkPushButtonClick()
 	m_glWindow->redraw();
 
 	dispToConsole(QString::fromLocal8Bit("基准地面保存成功！"));
+}
+
+void qVolumeMeasureDlg::onSwitchPushButtonClick()
+{
+	clearPushButton->setEnabled(true);
+
+	if (m_cloud.ref->isEnabled())
+	{
+		m_cloud.ref->setEnabled(false);
+		m_rasterMesh->setEnabled(true);
+	}
+	else
+	{
+		m_cloud.ref->setEnabled(true);
+		m_rasterMesh->setEnabled(false);
+	}
+	m_glWindow->redraw();
 }
 
 void qVolumeMeasureDlg::handlePickedItem(ccHObject* entity, unsigned itemIdx, int x, int y, const CCVector3& p, const CCVector3d& uwv)

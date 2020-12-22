@@ -39,6 +39,7 @@ private slots:
 	void onCalPushButtonClick();
 	void onGenReportPushButtonClick();
 	void onOkPushButtonClick();
+	void onSwitchPushButtonClick();
 	void handlePickedItem(ccHObject*, unsigned, int, int, const CCVector3&, const CCVector3d&);
 	void dispToConsole(const QString&);
 
@@ -101,7 +102,6 @@ private:
 
 	ccGLWindow* m_glWindow;
 	ccMesh* m_rasterMesh;
-	std::unique_ptr<QAxWidget> m_word;
 	std::vector<unsigned> m_pointsIdx;
 	CloudBackup m_cloud;
 	cc2DLabel m_label;
@@ -111,4 +111,15 @@ private:
 	qreal gridStep;
 	quint32 gridWidth, gridHeight;
 
+};
+
+class WordAppType : public QAxWidget
+{
+public:
+	WordAppType(const QString& c, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags())
+		:QAxWidget(c, parent, f) {}
+	~WordAppType()
+	{
+		this->dynamicCall("Quit()");
+	}
 };
